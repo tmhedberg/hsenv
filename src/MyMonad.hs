@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables, CPP #-}
 module MyMonad ( MyMonad
                , runMyMonad
                , indentMessages
@@ -27,7 +27,11 @@ import Control.Monad.Error (ErrorT, MonadError, runErrorT, throwError, catchErro
 import Control.Monad (when)
 import System.IO (stderr, hPutStrLn)
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 761
+import Prelude hiding (log, catch)
+#else
 import Prelude hiding (log)
+#endif
 
 newtype MyMonad a = MyMonad (StateT MyState (ReaderT Options (ErrorT MyException (WriterT [String] IO))) a)
     deriving (Functor, Monad, MonadReader Options, MonadState MyState, MonadError MyException, MonadWriter [String])

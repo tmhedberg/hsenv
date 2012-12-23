@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Util.IO ( getEnvVar
                , makeExecutable
                , readProcessWithExitCodeInEnv
@@ -18,6 +19,9 @@ import Data.List.Split (splitOn)
 import Control.Monad (foldM)
 import System.FilePath ((</>))
 import Control.Exception (catch)
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 761
+import Prelude hiding (catch)
+#endif
 
 -- Computation getEnvVar var returns Just the value of the environment variable var,
 -- or Nothing if the environment variable does not exist
