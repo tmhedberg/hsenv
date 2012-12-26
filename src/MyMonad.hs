@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables, CPP #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
 module MyMonad ( MyMonad
                , runMyMonad
                , indentMessages
@@ -18,7 +18,7 @@ module MyMonad ( MyMonad
 
 import Types
 
-import Control.Exception (IOException, catch)
+import qualified Control.Exception as E (IOException, catch)
 import Control.Monad.Trans (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, asks)
 import Control.Monad.Writer (WriterT, MonadWriter, runWriterT, tell)
@@ -27,18 +27,14 @@ import Control.Monad.Error (ErrorT, MonadError, runErrorT, throwError, catchErro
 import Control.Monad (when)
 import System.IO (stderr, hPutStrLn)
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 761
-import Prelude hiding (log, catch)
-#else
 import Prelude hiding (log)
-#endif
 
 newtype MyMonad a = MyMonad (StateT MyState (ReaderT Options (ErrorT MyException (WriterT [String] IO))) a)
     deriving (Functor, Monad, MonadReader Options, MonadState MyState, MonadError MyException, MonadWriter [String])
 
 instance MonadIO MyMonad where
     liftIO m = MyMonad $ do
-                 x <- liftIO $ (Right `fmap` m) `catch` \(e :: IOException) -> return $ Left e
+                 x <- liftIO $ (Right `fmap` m) `E.catch` \(e :: E.IOException) -> return $ Left e
                  case x of
                    Left e  -> throwError $ MyException $ "IO error: " ++ show e
                    Right y -> return y
