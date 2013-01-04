@@ -1,2 +1,4 @@
+syntax:glob
+.hgignore
 dist/
 dist_*/
