@@ -1,5 +1,7 @@
 #!/bin/sh
 
+unset GHC_PACKAGE_PATH
+
 PATH_ELEMS="$(echo ${PATH} | tr -s ':' '\n')"
 
 ORIG_CABAL_BINARY=""

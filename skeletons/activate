@@ -92,6 +92,7 @@ export PACKAGE_DB_FOR_GHC_PKG=" --no-user-package-${PKG_DB_OPT_SUFFIX} $(replace
 export PACKAGE_DB_FOR_GHC=" -no-user-package-${PKG_DB_OPT_SUFFIX} $(replace_pkg -package-${PKG_DB_OPT_SUFFIX}=)"
 export PACKAGE_DB_FOR_GHC_MOD=" -g -no-user-package-${PKG_DB_OPT_SUFFIX} $(replace_pkg '-g -package-'${PKG_DB_OPT_SUFFIX}=)"
 
+export GHC_PACKAGE_PATH=$(cat <HSENV_DIR>/ghc_package_path_var)
 export PS1="(${HSENV_NAME})${PS1}"
 
 unset -v GHC_VERSION_OUTPUT
