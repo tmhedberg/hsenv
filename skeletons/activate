@@ -84,7 +84,14 @@ then
     PKG_DB_OPT_SUFFIX="db"
 fi
 
-GHC_PACKAGE_PATH_REPLACEMENT="$(cat <HSENV_DIR>/ghc_package_path_var | sed -r -e 's/^/:/' -e 's/::*/:/g' -e 's/:\s*$//')"
+
+# sed on OSX uses -E flag in place of -r
+if [[ $OSTYPE =~ darwin ]]; then
+    GHC_PACKAGE_PATH_REPLACEMENT="$(cat <HSENV_DIR>/ghc_package_path_var | sed -E -e 's/^/:/' -e 's/::*/:/g' -e 's/:\s*$//')"
+else
+    GHC_PACKAGE_PATH_REPLACEMENT="$(cat <HSENV_DIR>/ghc_package_path_var | sed -r -e 's/^/:/' -e 's/::*/:/g' -e 's/:\s*$//')"
+fi
+
 
 replace_pkg () {
   replacement=$1
