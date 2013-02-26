@@ -60,12 +60,17 @@
                            (car environments)
                          (completing-read "Environment:" environments)))
              (hsenv-dir-name (concat dir ".hsenv_" env-name))
-             (hsenv-dir (file-name-as-directory hsenv-dir-name)))
-        (hsenv-activate-environment hsenv-dir)))))
+             (hsenv-dir-nameless (concat dir ".hsenv" env-name))
+             (hsenv-dir 
+               (cond
+                 ((file-exists-p hsenv-dir-name) hsenv-dir-name)
+                 ((file-exists-p hsenv-dir-nameless) hsenv-dir-nameless)
+                 (t nil))))
+        (hsenv-activate-environment (file-name-as-directory hsenv-dir))))))
 
 (defun hsenv-list-environments (dir)
-  (let ((hsenv-dirs (file-expand-wildcards (concat dir ".hsenv_*"))))
-    (mapcar (lambda (hsenv-dir) (substring hsenv-dir (+ 7 (length dir)))) hsenv-dirs)))
+  (let ((hsenv-dirs (file-expand-wildcards (concat dir ".hsenv*"))))
+    (mapcar (lambda (hsenv-dir) (substring hsenv-dir (+ 6 (length dir)))) hsenv-dirs)))
 
 
 (defun hsenv-activate (&optional select-dir)
