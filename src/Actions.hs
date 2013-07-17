@@ -12,15 +12,18 @@ module Actions ( cabalUpdate
                ) where
 
 import Control.Monad
+import qualified Data.ByteString.Char8 as C8
+import Data.List (intercalate)
+import Data.Maybe (fromMaybe, isJust)
+import Distribution.Package (PackageName(..))
+import Distribution.Version (Version (..))
+import Network.Http.Client
+import Safe (lastMay)
 import System.Directory (setCurrentDirectory, getCurrentDirectory, createDirectory, removeDirectoryRecursive, getAppUserDataDirectory, doesFileExist, findExecutable)
 import System.FilePath ((</>))
 import System.Info (arch, os)
 import System.Posix hiding (createDirectory, version)
-import Distribution.Version (Version (..))
-import Distribution.Package (PackageName(..))
-import Safe (lastMay)
-import Data.List (intercalate)
-import Data.Maybe (fromMaybe, isJust)
+import qualified System.IO.Streams as S
 
 import HsenvMonad
 import Types
@@ -232,6 +235,7 @@ createDirStructure = do
     debug $ "hsenv bin directory: " ++ hsEnvBinDir dirStructure
     liftIO $ createDirectory $ hsEnvBinDir dirStructure
 
+
 -- initialize private GHC package database inside virtual environment
 initGhcDb :: Hsenv ()
 initGhcDb = do
@@ -281,6 +285,7 @@ copyBaseSystem = do
         mapM_ transplantOptionalPackage ["haskell98", "haskell2010", "ghc", "ghc-binary"]
       _ -> debug "Using external GHC - nothing to copy, Virtual environment will reuse GHC package database"
 
+
 installGhc :: Hsenv ()
 installGhc = do
   info "Installing GHC"
@@ -290,7 +295,8 @@ installGhc = do
     Tarball tarballPath -> indentMessages $ installExternalGhc tarballPath
     Url url             -> indentMessages $ installRemoteGhc url
     Release tag         -> indentMessages $ installReleasedGhc tag
-
+  
+ 
 installExternalGhc :: FilePath -> Hsenv ()
 installExternalGhc tarballPath = do
   info $ "Installing GHC from " ++ tarballPath
@@ -313,13 +319,21 @@ installExternalGhc tarballPath = do
     liftIO $ removeDirectoryRecursive tmpGhcDir
     return ()
 
+
+-- Download a file over HTTP using streams, so it
+-- has constant memory allocation.
+downloadFile :: URL -> FilePath -> Hsenv ()
+downloadFile url name = liftIO $ get url $ \_ inStream -> do
+  S.withFileAsOutput name (S.connect inStream)
+
+
 installRemoteGhc :: String -> Hsenv ()
 installRemoteGhc url = do
     dirStructure <- hseDirStructure
     downloadDir <- liftIO $ createTemporaryDirectory (hsEnv dirStructure) "ghc-download"
     let tarball = downloadDir </> "tarball"
     debug $ "Downloading GHC from " ++ url
-    _ <- indentMessages $ outsideProcess' "curl" ["-fL", "--retry", "2", url, "-o", tarball]
+    downloadFile (C8.pack url) tarball
     installExternalGhc tarball
     liftIO $ removeDirectoryRecursive downloadDir
     return ()
