@@ -23,6 +23,7 @@ import Data.List (intercalate)
 import Data.Maybe (fromMaybe, isJust)
 
 import Network.Http.Client
+import Network.Socket (withSocketsDo)
 import qualified Data.ByteString.Char8 as C8
 import qualified System.IO.Streams as S
 
@@ -321,7 +322,7 @@ installExternalGhc tarballPath = do
 -- has constant memory allocation.
 downloadFile :: URL -> FilePath -> Hsenv ()
 downloadFile url name = do
-  m_ex <- liftIO $ get url $ \response inStream ->
+  m_ex <- liftIO $ withSocketsDo $ get url $ \response inStream ->
     case getStatusCode response of
       200 -> S.withFileAsOutput name (S.connect inStream) >> return Nothing
       code -> return $ Just $ HsenvException $
