@@ -4,7 +4,6 @@ module Util.Args.RawArgs ( Args(..)
 
 import Data.Monoid (Monoid(..))
 import Control.Monad (liftM)
-import Control.Monad.Instances ()
 import Util.List (breakOn)
 
 {-# ANN Args "HLint: ignore Use String" #-}
