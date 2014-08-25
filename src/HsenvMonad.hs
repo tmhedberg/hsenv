@@ -20,6 +20,7 @@ module HsenvMonad ( Hsenv
 import Types
 
 import Control.Exception as Exception (IOException, catch)
+import Control.Applicative
 import Control.Monad.Trans (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, asks, ask)
 import Control.Monad.Writer (WriterT, MonadWriter, runWriterT, tell)
@@ -31,7 +32,7 @@ import System.IO (stderr, hPutStrLn)
 import Prelude hiding (log)
 
 newtype Hsenv a = Hsenv (StateT HsenvState (ReaderT Options (ErrorT HsenvException (WriterT [String] IO))) a)
-    deriving (Functor, Monad, MonadReader Options, MonadState HsenvState, MonadError HsenvException, MonadWriter [String])
+    deriving (Functor, Applicative, Monad, MonadReader Options, MonadState HsenvState, MonadError HsenvException, MonadWriter [String])
 
 instance MonadIO Hsenv where
     liftIO m = Hsenv $ do
