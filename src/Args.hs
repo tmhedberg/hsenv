@@ -5,6 +5,7 @@ module Args (getArgs) where
 import Control.Arrow
 import Data.Char
 import Util.Args
+import System.Directory (getCurrentDirectory)
 import Types
 
 #ifdef cabal
@@ -18,7 +19,7 @@ versionString :: String
 versionString = "dev"
 #endif
 
-verbosityOpt, veryVerbosityOpt, skipSanityOpt, sharingOpt, noPS1Opt :: Switch
+verbosityOpt, veryVerbosityOpt, skipSanityOpt, sharingOpt, noPS1Opt, bootstrapCabalOpt :: Switch
 
 verbosityOpt = Switch { switchName  = "verbose"
                       , switchHelp  = "Print some debugging info"
@@ -47,7 +48,22 @@ noPS1Opt =
            , switchShort = Nothing
            }
 
-nameOpt, ghcOpt :: DynOpt
+bootstrapCabalOpt =
+    Switch { switchName  = "bootstrap-cabal"
+           , switchHelp  = "Bootstrap cabal-install inside virtual environment"
+                           ++ "(Use this if you don't have cabal-install installed "
+                           ++ "or it's not on your $PATH)"
+           , switchShort = Nothing
+           }
+
+parentOpt, nameOpt, ghcOpt :: DynOpt
+
+parentOpt = DynOpt
+            { dynOptName = "parent-dir"
+            , dynOptTemplate = "PATH"
+            , dynOptDescription = "current directory"
+            , dynOptHelp = "Create Virtual Haskell Environment inside PATH"
+            }
 
 nameOpt = DynOpt
           { dynOptName = "name"
@@ -82,6 +98,10 @@ argParser = proc () -> do
                       (True, False)  -> Verbose
                       (False, False) -> Quiet
   name <- getOpt nameOpt -< ()
+  parentFlag <- getOpt parentOpt -< ()
+  parent <- case parentFlag of
+           Just parent' -> returnA -< parent'
+           Nothing -> liftIO' getCurrentDirectory -< ()
   ghcFlag <- getOpt ghcOpt -< ()
   noPS1' <- getOpt noPS1Opt -< ()
   let ghc = case ghcFlag of
@@ -94,15 +114,19 @@ argParser = proc () -> do
                      | otherwise              -> Tarball s
   skipSanityCheckFlag <- getOpt skipSanityOpt -< ()
   noSharingFlag <- getOpt sharingOpt -< ()
+  bootstrapCabalFlag <- getOpt bootstrapCabalOpt -< ()
   make <- getOpt makeOpt -< ()
   returnA -< Options{ verbosity       = verboseness
                    , skipSanityCheck = skipSanityCheckFlag
+                   , envParentDir    = parent
                    , hsEnvName       = name
                    , ghcSource       = ghc
                    , makeCmd         = make
                    , noSharing       = noSharingFlag
                    , noPS1           = noPS1'
+                   , cabalBootstrap  = bootstrapCabalFlag
                    }
+    where liftIO' = liftIO . const
 
 getArgs :: IO Options
 getArgs = parseArgs argParser versionString outro

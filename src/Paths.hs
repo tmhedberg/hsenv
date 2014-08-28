@@ -3,13 +3,16 @@ module Paths ( hseDirStructure
              , dotDirName
              , constructDotDirName
              , insidePathVar
+             , cachedCabalInstallPath
              ) where
 
 import Data.List (intercalate)
+import Distribution.Version (Version)
+import System.Directory (getAppUserDataDirectory)
 import System.FilePath ((</>))
-import System.Directory (getCurrentDirectory)
 
 import Util.IO (getEnvVar)
+import Util.Cabal (prettyVersion)
 import Types
 import HsenvMonad
 
@@ -17,9 +20,9 @@ import HsenvMonad
 -- inside virtual environment dir structure
 hseDirStructure :: Hsenv DirStructure
 hseDirStructure = do
-  cwd <- liftIO getCurrentDirectory
+  parentDir <- asks envParentDir
   dirName <- dotDirName
-  let hsEnvLocation    = cwd
+  let hsEnvLocation    = parentDir
       hsEnvDirLocation = hsEnvLocation </> dirName
       cabalDirLocation = hsEnvDirLocation </> "cabal"
       ghcDirLocation   = hsEnvDirLocation </> "ghc"
@@ -61,3 +64,22 @@ insidePathVar = do
                          System -> [cabalBinDir dirStructure]
                          _      -> [cabalBinDir dirStructure, ghcBinDir dirStructure]
   return $ intercalate ":" extraPathElems ++ oldPathVarSuffix
+
+-- returns path to ~/.hsenv dir
+userHsenvDir :: Hsenv FilePath
+userHsenvDir = liftIO $ getAppUserDataDirectory "hsenv"
+
+-- returns path to ~/.hsenv/cache directory
+userCacheDir :: Hsenv FilePath
+userCacheDir = do
+  baseDir <- userHsenvDir
+  return $ baseDir </> "cache"
+
+-- returns path to cached version of compiled binary for cabal-install
+-- (depends on Cabal library version),
+-- e.g. ~/.hsenv/cache/cabal-install/Cabal-0.14.0
+cachedCabalInstallPath :: Version -> Hsenv FilePath
+cachedCabalInstallPath cabalVersion = do
+  cacheDir <- userCacheDir
+  let cabInsCachePath = cacheDir </> "cabal-install"
+  return $ cabInsCachePath </> "Cabal-" ++ prettyVersion cabalVersion

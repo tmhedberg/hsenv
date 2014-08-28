@@ -1,3 +1,4 @@
+import Control.Monad (when)
 import System.IO (stderr, hPutStrLn)
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
@@ -27,6 +28,7 @@ main = do
 
 realMain :: Hsenv ()
 realMain = do
+  initDotHsenvDir
   skipSanityCheckFlag <- asks skipSanityCheck
   if skipSanityCheckFlag then
       info "WARNING: sanity checks are disabled."
@@ -42,6 +44,8 @@ realMain = do
   installSimpleWrappers
   installProgSymlinks
   symlinkToSkeleton "runghc" "runhaskell"
+  bootstrapCabalFlag <- asks cabalBootstrap
+  when bootstrapCabalFlag bootstrapCabal
   cabalUpdate
   info ""
   dotDir <- dotDirName
