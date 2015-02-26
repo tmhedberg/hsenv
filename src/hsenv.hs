@@ -1,3 +1,4 @@
+import OpenSSL
 import System.IO (stderr, hPutStrLn)
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
@@ -10,7 +11,7 @@ import Args (getArgs)
 import Paths (dotDirName, constructDotDirName)
 
 main :: IO ()
-main = do
+main = withOpenSSL $ do
   options <- getArgs
   (result, messageLog) <- runHsenv realMain options
   case result of
